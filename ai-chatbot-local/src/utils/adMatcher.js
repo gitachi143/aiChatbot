@@ -36,39 +36,45 @@ function calculateRelevanceScore(contentKeywords, ad) {
   
   // Direct keyword matches (highest weight)
   contentKeywords.forEach(keyword => {
-    if (adKeywords.includes(keyword)) {
-      score += 10;
+    const keywordLower = keyword.toLowerCase();
+    
+    // Exact keyword matches (very high priority)
+    if (adKeywords.includes(keywordLower)) {
+      score += 20; // Increased from 10
     }
     
-    // Partial matches in keywords
+    // Partial matches in keywords (reduced to avoid false positives)
     adKeywords.forEach(adKeyword => {
-      if (adKeyword.includes(keyword) || keyword.includes(adKeyword)) {
-        score += 5;
+      if (adKeyword.includes(keywordLower) && adKeyword !== keywordLower) {
+        score += 3; // Reduced from 5
+      } else if (keywordLower.includes(adKeyword) && keywordLower !== adKeyword) {
+        score += 3;
       }
     });
     
-    // Title matches
-    if (adTitle.includes(keyword)) {
-      score += 8;
+    // Title matches (high priority)
+    if (adTitle.includes(keywordLower)) {
+      score += 15; // Increased from 8
     }
     
     // Summary matches
-    if (adSummary.includes(keyword)) {
-      score += 6;
+    if (adSummary.includes(keywordLower)) {
+      score += 8; // Increased from 6
     }
     
     // Category matches
-    if (adCategory.includes(keyword) || keyword.includes(adCategory)) {
-      score += 7;
+    if (adCategory.includes(keywordLower) || keywordLower.includes(adCategory)) {
+      score += 10; // Increased from 7
     }
   });
   
-  // Company name bonus if mentioned
+  // Company name bonus (brand mentions are very important)
   if (ad.company?.name) {
     const companyName = ad.company.name.toLowerCase();
     contentKeywords.forEach(keyword => {
-      if (companyName.includes(keyword) || keyword.includes(companyName)) {
-        score += 15; // High bonus for brand mentions
+      const keywordLower = keyword.toLowerCase();
+      if (companyName.includes(keywordLower) || keywordLower.includes(companyName)) {
+        score += 25; // Increased from 15 for brand recognition
       }
     });
   }
@@ -80,7 +86,7 @@ function calculateRelevanceScore(contentKeywords, ad) {
 export function findMatchingAds(content, options = {}) {
   const {
     maxAds = 1,
-    minScore = 5,
+    minScore = 10, // Updated default to match new scoring system
     excludeAdIds = [],
     recentAdIds = [] // Ads shown recently - reduce their priority
   } = options;
@@ -90,7 +96,10 @@ export function findMatchingAds(content, options = {}) {
   }
   
   const keywords = extractKeywords(content);
+  console.log(`🔍 Ad matching for: "${content}" → keywords: [${keywords.join(', ')}]`);
+  
   if (keywords.length === 0) {
+    console.log(`❌ No keywords extracted`);
     return [];
   }
   
@@ -107,6 +116,12 @@ export function findMatchingAds(content, options = {}) {
       const bScore = recentAdIds.includes(b.ad.id) ? b.score * 0.3 : b.score;
       return bScore - aScore;
     });
+    
+  if (scoredAds.length > 0) {
+    console.log(`🎯 Selected: ${scoredAds[0].ad.title} (${scoredAds[0].score} points)`);
+  } else {
+    console.log(`❌ No ads above ${minScore} point threshold`);
+  }
   
   return scoredAds
     .slice(0, maxAds)

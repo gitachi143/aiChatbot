@@ -17,42 +17,11 @@ function InlineAd({ ad, onBecomeSticky, onLeaveSticky, isSticky = false }) {
     }
   };
 
-  // Scroll detection for sticky functionality
+  // Temporarily disabled sticky functionality to avoid complications
   useEffect(() => {
-    if (!adRef.current || !onBecomeSticky || !onLeaveSticky) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Ad is visible, remove from sticky
-          onLeaveSticky(ad.id);
-        } else {
-          // Ad has scrolled out of view
-          const rect = entry.boundingClientRect;
-          if (rect.bottom < 0) {
-            // Ad is above the viewport (scrolled past)
-            onBecomeSticky({
-              id: ad.id,
-              title: ad.title,
-              summary: ad.summary || ad.description,
-              company: ad.company,
-              element: adRef.current
-            });
-          }
-        }
-      },
-      {
-        threshold: 0,
-        rootMargin: '-50px 0px 0px 0px' // Trigger when ad is 50px above viewport
-      }
-    );
-
-    observer.observe(adRef.current);
-
+    // Sticky functionality disabled for now
     return () => {
-      if (adRef.current) {
-        observer.unobserve(adRef.current);
-      }
+      // Cleanup if needed
     };
   }, [ad.id, onBecomeSticky, onLeaveSticky]);
 
@@ -275,45 +244,14 @@ function StickyMiniAd({ ad, onScrollToAd, onClose }) {
 
 // Compact Inline Ad Component (no image, minimal details)
 function CompactInlineAd({ ad, onBecomeSticky, onLeaveSticky, isSticky = false }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
   const adRef = useRef(null);
 
-  // Scroll detection for sticky functionality
+  // Temporarily disabled sticky functionality to avoid complications
   useEffect(() => {
-    if (!adRef.current || !onBecomeSticky || !onLeaveSticky) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Ad is visible, remove from sticky
-          onLeaveSticky(ad.id);
-        } else {
-          // Ad has scrolled out of view
-          const rect = entry.boundingClientRect;
-          if (rect.bottom < 0) {
-            // Ad is above the viewport (scrolled past)
-            onBecomeSticky({
-              id: ad.id,
-              title: ad.title,
-              summary: ad.summary || ad.description,
-              company: ad.company,
-              element: adRef.current
-            });
-          }
-        }
-      },
-      {
-        threshold: 0,
-        rootMargin: '-50px 0px 0px 0px' // Trigger when ad is 50px above viewport
-      }
-    );
-
-    observer.observe(adRef.current);
-
+    // Sticky functionality disabled for now
     return () => {
-      if (adRef.current) {
-        observer.unobserve(adRef.current);
-      }
+      // Cleanup if needed
     };
   }, [ad.id, onBecomeSticky, onLeaveSticky]);
 

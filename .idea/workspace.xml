@@ -6,8 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="7eae8182-14ef-44f6-93ba-2c7b1589b77c" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ai-chatbot-local/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ai-chatbot-local/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ai-chatbot-local/src/services/apiService.js" beforeDir="false" afterPath="$PROJECT_DIR$/ai-chatbot-local/src/services/apiService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ai-chatbot-local/src/components/ChatInterface.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ai-chatbot-local/src/components/ChatInterface.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ai-chatbot-local/src/components/InlineAd.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ai-chatbot-local/src/components/InlineAd.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ai-chatbot-local/src/utils/adMatcher.js" beforeDir="false" afterPath="$PROJECT_DIR$/ai-chatbot-local/src/utils/adMatcher.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +77,7 @@
       <updated>1756751893889</updated>
       <workItem from="1756751895970" duration="688000" />
       <workItem from="1756772250280" duration="4247000" />
-      <workItem from="1756821856958" duration="591000" />
+      <workItem from="1756821856958" duration="1689000" />
     </task>
     <servers />
   </component>

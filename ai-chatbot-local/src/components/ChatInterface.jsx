@@ -4,16 +4,20 @@ import { findMatchingAds, AdTracker } from '../utils/adMatcher';
 import InlineAd, { StickyMiniAd, CompactInlineAd } from './InlineAd';
 
 // Simple ChatGPT-style formatting component with ad injection
-function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdBecomeSticky, onAdLeaveSticky }) {
+function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdBecomeSticky, onAdLeaveSticky, onAdInjected = null }) {
   // Split content into lines and process each line
   const formatText = (text) => {
     const lines = text.split('\n');
     const formattedLines = [];
     let adInjected = false; // Track if we've already injected an ad
     let sectionCount = 0; // Track number of sections for ad placement
+    let processedContentLength = 0; // Track how much content we've processed
+    let linesProcessedSinceLastSection = 0; // Lines since last section
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      processedContentLength += line.length;
+      linesProcessedSinceLastSection++;
       
       // Skip empty lines but preserve spacing
       if (line.trim() === '') {
@@ -23,9 +27,33 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
         continue;
       }
       
+      // Check if we should inject ad after sufficient content from first section
+      if (!adInjected && adToShow && sectionCount >= 1 && 
+          linesProcessedSinceLastSection >= 4 && processedContentLength >= 250) {
+        console.log(`🎯 Injecting ad after sufficient content (${processedContentLength} chars, ${linesProcessedSinceLastSection} lines since section)`);
+        formattedLines.push(
+          <div key={`ad-content-${i}`}>
+            <CompactInlineAd 
+              ad={adToShow} 
+              onBecomeSticky={onAdBecomeSticky}
+              onLeaveSticky={onAdLeaveSticky}
+            />
+          </div>
+        );
+        adInjected = true;
+        // Notify that ad was injected - delay during streaming to avoid freezing
+        if (onAdInjected && !isStreaming) {
+          onAdInjected(adToShow);
+        } else if (onAdInjected && isStreaming) {
+          // Delay the callback during streaming to avoid interfering
+          setTimeout(() => onAdInjected(adToShow), 100);
+        }
+      }
+      
       // Large headers (lines that end with : and are short)
       if (line.endsWith(':') && line.length < 50 && !line.includes('http')) {
         sectionCount++;
+        linesProcessedSinceLastSection = 0; // Reset counter for new section
         
         // Add divider before header (except for first header)
         const isFirstHeader = formattedLines.length === 0 || 
@@ -39,20 +67,6 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
               <hr className="border border-white dark:border-white" />
             </div>
           );
-        }
-        
-        // Inject ad after second section if we have one and haven't injected yet
-        if (!adInjected && adToShow && sectionCount === 2) {
-          formattedLines.push(
-            <div key={`ad-${i}`}>
-              <CompactInlineAd 
-                ad={adToShow} 
-                onBecomeSticky={onAdBecomeSticky}
-                onLeaveSticky={onAdLeaveSticky}
-              />
-            </div>
-          );
-          adInjected = true;
         }
         
         formattedLines.push(
@@ -69,6 +83,7 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
       if (line.startsWith('## ') || (line === line.toUpperCase() && line.length < 40 && /^[A-Z\s]+$/.test(line))) {
         const headerText = line.startsWith('## ') ? line.slice(3) : line;
         sectionCount++;
+        linesProcessedSinceLastSection = 0; // Reset counter for new section
         
         // Add divider before header (except for first header)
         const isFirstHeader = formattedLines.length === 0 || 
@@ -82,20 +97,6 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
               <hr className="border border-white dark:border-white" />
             </div>
           );
-        }
-        
-        // Inject ad after second section if we have one and haven't injected yet
-        if (!adInjected && adToShow && sectionCount === 2) {
-          formattedLines.push(
-            <div key={`ad-${i}`}>
-              <CompactInlineAd 
-                ad={adToShow} 
-                onBecomeSticky={onAdBecomeSticky}
-                onLeaveSticky={onAdLeaveSticky}
-              />
-            </div>
-          );
-          adInjected = true;
         }
         
         formattedLines.push(
@@ -111,6 +112,7 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
       // Small headers (lines that start with # )
       if (line.startsWith('# ')) {
         sectionCount++;
+        linesProcessedSinceLastSection = 0; // Reset counter for new section
         
         // Add divider before header (except for first header)
         const isFirstHeader = formattedLines.length === 0 || 
@@ -124,20 +126,6 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
               <hr className="border border-white dark:border-white" />
             </div>
           );
-        }
-        
-        // Inject ad after second section if we have one and haven't injected yet
-        if (!adInjected && adToShow && sectionCount === 2) {
-          formattedLines.push(
-            <div key={`ad-${i}`}>
-              <CompactInlineAd 
-                ad={adToShow} 
-                onBecomeSticky={onAdBecomeSticky}
-                onLeaveSticky={onAdLeaveSticky}
-              />
-            </div>
-          );
-          adInjected = true;
         }
         
         formattedLines.push(
@@ -211,17 +199,31 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
       );
     }
     
-    // If we have an ad but haven't placed it yet (no sections found), place it at the end
-    if (!adInjected && adToShow && !isStreaming) {
-      formattedLines.push(
-        <div key="ad-fallback">
-          <CompactInlineAd 
-            ad={adToShow} 
-            onBecomeSticky={onAdBecomeSticky}
-            onLeaveSticky={onAdLeaveSticky}
-          />
-        </div>
-      );
+    // If we have an ad but haven't placed it yet, place it strategically
+    if (!adInjected && adToShow) {
+      const textLength = text.replace(/\s+/g, ' ').length;
+      const shouldPlaceFallbackAd = !isStreaming || textLength > 300; // Place during streaming if enough content
+      
+      if (shouldPlaceFallbackAd) {
+        console.log(`🎯 Placing fallback ad: ${adToShow.title} (textLength: ${textLength}, streaming: ${isStreaming})`);
+        formattedLines.push(
+          <div key="ad-fallback">
+            <CompactInlineAd 
+              ad={adToShow} 
+              onBecomeSticky={onAdBecomeSticky}
+              onLeaveSticky={onAdLeaveSticky}
+            />
+          </div>
+        );
+        adInjected = true;
+        // Notify that ad was injected - delay during streaming to avoid freezing
+        if (onAdInjected && !isStreaming) {
+          onAdInjected(adToShow);
+        } else if (onAdInjected && isStreaming) {
+          // Delay the callback during streaming to avoid interfering
+          setTimeout(() => onAdInjected(adToShow), 100);
+        }
+      }
     }
     
     return formattedLines;
@@ -281,15 +283,78 @@ function ChatInterface({ onBackToHome }) {
   const messagesEndRef = useRef(null);
   const streamingContentRef = useRef('');
   const textareaRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const autoScrollTimeoutRef = useRef(null);
 
-  // Scroll to bottom when messages change
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Check if user is near bottom of chat
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    
+    const threshold = 100; // pixels from bottom
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    return scrollHeight - scrollTop - clientHeight < threshold;
   };
 
+  // Smart scroll to bottom - only if user hasn't scrolled up
+  const scrollToBottom = () => {
+    if (shouldAutoScroll && !isUserScrolling) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  // Handle scroll events to detect manual scrolling
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    
+    setIsUserScrolling(true);
+    
+    // Clear existing timeout
+    if (autoScrollTimeoutRef.current) {
+      clearTimeout(autoScrollTimeoutRef.current);
+    }
+    
+    // If user scrolled near bottom, resume auto-scroll
+    if (isNearBottom()) {
+      setShouldAutoScroll(true);
+      setIsUserScrolling(false);
+    } else {
+      setShouldAutoScroll(false);
+      
+      // Resume auto-scroll after user stops scrolling for 2 seconds
+      autoScrollTimeoutRef.current = setTimeout(() => {
+        if (isNearBottom()) {
+          setShouldAutoScroll(true);
+          setIsUserScrolling(false);
+        }
+      }, 2000);
+    }
+  };
+
+  // Attach scroll listener
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingContent]);
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => {
+        container.removeEventListener('scroll', handleScroll);
+        if (autoScrollTimeoutRef.current) {
+          clearTimeout(autoScrollTimeoutRef.current);
+        }
+      };
+    }
+  }, []);
+
+  // Auto-scroll when messages change, but only if appropriate
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 50); // Small delay to let content render
+    
+    return () => clearTimeout(timeoutId);
+  }, [messages, streamingContent, shouldAutoScroll]);
 
   // Update message ads when messages change - only one ad per conversation
   useEffect(() => {
@@ -374,7 +439,7 @@ function ChatInterface({ onBackToHome }) {
     
     const matchingAds = findMatchingAds(contextMessages, {
       maxAds: 1,
-      minScore: 5, // Lower threshold for quicker matching
+      minScore: 10, // Adjusted for new scoring system (was 5)
       excludeAdIds: shownAds,
       recentAdIds: recentAds
     });
@@ -400,12 +465,37 @@ function ChatInterface({ onBackToHome }) {
     
     const matchingAds = findMatchingAds(userInput, {
       maxAds: 1,
-      minScore: 7, // Slightly higher threshold for user input
+      minScore: 15, // Adjusted for new scoring system (was 7)
       excludeAdIds: shownAds,
       recentAdIds: recentAds
     });
     
     if (matchingAds.length > 0) {
+      const selectedAd = matchingAds[0].ad;
+      adTracker.markAdShown(currentConversation.id, selectedAd.id);
+      return selectedAd;
+    }
+    
+    return null;
+  };
+
+  // Function to check for ad matches during streaming
+  const checkForStreamingAd = (combinedContent, messageId) => {
+    if (!combinedContent || !currentConversation?.id) return null;
+    
+    const shownAds = adTracker.getShownAds(currentConversation.id);
+    const recentAds = adTracker.getRecentAds();
+    
+    const matchingAds = findMatchingAds(combinedContent, {
+      maxAds: 1,
+      minScore: 15, // Adjusted for new scoring system (was 6)
+      excludeAdIds: shownAds,
+      recentAdIds: recentAds
+    });
+    
+    console.log(`🎯 Found ${matchingAds.length} matching ads for streaming`);
+    if (matchingAds.length > 0) {
+      console.log(`Best match: ${matchingAds[0].ad.title} (score: ${matchingAds[0].relevanceScore})`);
       const selectedAd = matchingAds[0].ad;
       adTracker.markAdShown(currentConversation.id, selectedAd.id);
       return selectedAd;
@@ -576,6 +666,22 @@ function ChatInterface({ onBackToHome }) {
           }
         );
 
+        // Get ad for streaming content early - use more context for better matching
+        const streamingMessageId = Date.now() + 1;
+        setCurrentMessageId(streamingMessageId); // Set the message ID immediately
+        
+        // Use full user message + beginning of response for better ad matching
+        const contextForAd = newMessage.trim() + ' ' + (response.content.substring(0, 300) || '');
+        console.log(`🔍 Ad matching context: "${contextForAd}"`);
+        
+        const streamingAd = inputAd || checkForStreamingAd(contextForAd, streamingMessageId);
+        if (streamingAd) {
+          console.log(`📌 Selected streaming ad: ${streamingAd.title}`);
+          setMessageAds(prev => new Map(prev.set(streamingMessageId, streamingAd)));
+        } else {
+          console.log('❌ No ad found for streaming content');
+        }
+        
         // Simulate smooth streaming with proper completion handling
         simulateSmootherStreaming(
           response.content, 
@@ -821,7 +927,7 @@ function ChatInterface({ onBackToHome }) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
           {messages.length === 0 && !isStreaming && !isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
@@ -892,9 +998,17 @@ function ChatInterface({ onBackToHome }) {
                             <FormattedMessage 
                               content={streamingContent} 
                               isStreaming={true} 
-                              adToShow={null}
+                              adToShow={messageAds.get(currentMessageId) || null}
                               onAdBecomeSticky={handleAdBecomeSticky}
                               onAdLeaveSticky={handleAdLeaveSticky}
+                              onAdInjected={(ad) => {
+                                // Store the ad for the current streaming message - use requestAnimationFrame to avoid interfering with streaming
+                                requestAnimationFrame(() => {
+                                  if (currentMessageId) {
+                                    setMessageAds(prev => new Map(prev.set(currentMessageId, ad)));
+                                  }
+                                });
+                              }}
                             />
                           </div>
                         ) : (
