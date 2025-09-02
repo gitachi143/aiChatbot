@@ -41,6 +41,22 @@ export class APIService {
     return this.apiKeys[provider];
   }
 
+  clearApiKey(provider) {
+    delete this.apiKeys[provider];
+  }
+
+  clearAllApiKeys() {
+    this.apiKeys = {};
+  }
+
+  // Debug method to check current API keys
+  debugApiKeys() {
+    console.log('Current API Keys:', {
+      gemini: this.apiKeys[API_PROVIDERS.GEMINI] ? `${this.apiKeys[API_PROVIDERS.GEMINI].substring(0, 8)}...` : 'Not set',
+      openai: this.apiKeys[API_PROVIDERS.OPENAI] ? `${this.apiKeys[API_PROVIDERS.OPENAI].substring(0, 8)}...` : 'Not set'
+    });
+  }
+
   async sendMessage(messages, provider, model, options = {}) {
     const apiKey = this.getApiKey(provider);
     if (!apiKey) {
@@ -146,6 +162,13 @@ export class APIService {
         ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`
         : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+      console.log('=== GEMINI API CALL DEBUG ===');
+      console.log('Endpoint:', endpoint);
+      console.log('Model:', model);
+      console.log('API Key:', apiKey ? apiKey.substring(0, 8) + '...' : 'Not provided');
+      console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+      console.log('===============================');
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -154,10 +177,40 @@ export class APIService {
         body: JSON.stringify(requestBody)
       });
 
+      console.log('=== GEMINI API RESPONSE ===');
+      console.log('Status:', response.status);
+      console.log('Status Text:', response.statusText);
+      console.log('Headers:', Object.fromEntries(response.headers.entries()));
+      console.log('============================');
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Log detailed error information for debugging
+        console.error('Gemini API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          endpoint,
+          hasApiKey: !!apiKey,
+          apiKeyLength: apiKey ? apiKey.length : 0
+        });
+        
+        let errorMessage = errorData.error?.message || `HTTP ${response.status}`;
+        
+        // Provide more specific error messages
+        if (response.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please wait a few minutes and try again, or check if you have exceeded your API quota.';
+        } else if (response.status === 403) {
+          errorMessage = 'API key access forbidden. Please verify your Gemini API key has the necessary permissions and hasn\'t been revoked.';
+        } else if (response.status === 401) {
+          errorMessage = 'Invalid API key. Please check that your Gemini API key is correct and active.';
+        } else if (response.status === 400) {
+          errorMessage = `Bad request: ${errorData.error?.message || 'Invalid request parameters'}`;
+        }
+        
         throw new APIError(
-          errorData.error?.message || `HTTP ${response.status}`,
+          errorMessage,
           response.status,
           API_PROVIDERS.GEMINI
         );
