@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { apiService, API_PROVIDERS } from '../services/apiService';
 import { findMatchingAds, AdTracker } from '../utils/adMatcher';
 import InlineAd, { StickyMiniAd, CompactInlineAd } from './InlineAd';
+import ThemeToggle from './ThemeToggle';
 
 // Simple ChatGPT-style formatting component with ad injection
 function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdBecomeSticky, onAdLeaveSticky, onAdInjected = null }) {
@@ -31,6 +32,15 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
       if (!adInjected && adToShow && sectionCount >= 1 && 
           linesProcessedSinceLastSection >= 4 && processedContentLength >= 250) {
         console.log(`🎯 Injecting ad after sufficient content (${processedContentLength} chars, ${linesProcessedSinceLastSection} lines since section)`);
+        
+        // Add divider before ad
+        formattedLines.push(
+          <div key={`ad-divider-before-${i}`} className="my-4">
+            <hr className="border border-white dark:border-white" />
+          </div>
+        );
+        
+        // Add the ad
         formattedLines.push(
           <div key={`ad-content-${i}`}>
             <CompactInlineAd 
@@ -205,7 +215,16 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
       const shouldPlaceFallbackAd = !isStreaming || textLength > 300; // Place during streaming if enough content
       
       if (shouldPlaceFallbackAd) {
-        console.log(`🎯 Placing fallback ad: ${adToShow.title} (textLength: ${textLength}, streaming: ${isStreaming})`);
+        console.log(`🎯 Placing fallback ad: ${adToShow.title} (textLength: ${textLength}, streaming: ${isStreaming}, sections: ${sectionCount})`);
+        
+        // Add divider before ad
+        formattedLines.push(
+          <div key="ad-divider-fallback" className="my-4">
+            <hr className="border border-white dark:border-white" />
+          </div>
+        );
+        
+        // Add the ad
         formattedLines.push(
           <div key="ad-fallback">
             <CompactInlineAd 
@@ -224,6 +243,8 @@ function FormattedMessage({ content, isStreaming = false, adToShow = null, onAdB
           setTimeout(() => onAdInjected(adToShow), 100);
         }
       }
+    } else if (adInjected && adToShow) {
+      console.log(`✅ Ad already placed, skipping fallback for: ${adToShow.title}`);
     }
     
     return formattedLines;
@@ -356,34 +377,35 @@ function ChatInterface({ onBackToHome }) {
     return () => clearTimeout(timeoutId);
   }, [messages, streamingContent, shouldAutoScroll]);
 
-  // Update message ads when messages change - only one ad per conversation
+  // Update message ads when messages change - preserve existing ads, only add new ones
   useEffect(() => {
     if (messages.length === 0) {
       setMessageAds(new Map());
       return;
     }
 
-    const newMessageAds = new Map();
-    let adPlaced = false; // Only allow one ad per response
-    
-    // Check messages in order, place only one ad
-    messages.forEach(message => {
-      if (message.role === 'assistant' && !adPlaced) {
-        const ad = determineAdPlacement(message, messages);
-        if (ad) {
-          newMessageAds.set(message.id, ad);
-          adPlaced = true; // Prevent additional ads
+    // Preserve existing ads and only add new ones if no ad exists yet
+    setMessageAds(prevMessageAds => {
+      const newMessageAds = new Map(prevMessageAds); // Copy existing ads
+      let adPlaced = Array.from(prevMessageAds.values()).length > 0; // Check if any ad already exists
+      
+      // Only check messages that don't already have ads
+      messages.forEach(message => {
+        if (message.role === 'assistant' && !adPlaced && !newMessageAds.has(message.id)) {
+          const ad = determineAdPlacement(message, messages);
+          if (ad) {
+            console.log(`🔄 useEffect setting initial ad: ${ad.title} for message ${message.id}`);
+            newMessageAds.set(message.id, ad);
+            adPlaced = true; // Prevent additional ads
+          }
         }
-      }
+      });
+      
+      return newMessageAds;
     });
-    
-    setMessageAds(newMessageAds);
   }, [messages, currentConversation?.id]);
 
-  // Apply dark theme
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+  // Dark theme is now managed by ThemeProvider
 
   // Set Gemini API key in service when it changes
   useEffect(() => {
@@ -676,10 +698,10 @@ function ChatInterface({ onBackToHome }) {
         
         const streamingAd = inputAd || checkForStreamingAd(contextForAd, streamingMessageId);
         if (streamingAd) {
-          console.log(`📌 Selected streaming ad: ${streamingAd.title}`);
+          console.log(`📌 Selected streaming ad: ${streamingAd.title} for message ${streamingMessageId}`);
           setMessageAds(prev => new Map(prev.set(streamingMessageId, streamingAd)));
         } else {
-          console.log('❌ No ad found for streaming content');
+          console.log(`❌ No ad found for streaming content, message ${streamingMessageId}`);
         }
         
         // Simulate smooth streaming with proper completion handling
@@ -702,10 +724,17 @@ function ChatInterface({ onBackToHome }) {
 
               const finalMessages = [...updatedMessages, aiMessage];
               
-              // Check for ad placement on the AI response (will use input ad if found, or find new one)
-              const responseAd = inputAd || determineAdPlacement(aiMessage, finalMessages);
-              if (responseAd) {
-                setMessageAds(prev => new Map(prev.set(aiMessageId, responseAd)));
+              // Only determine new ad if message doesn't already have one from streaming
+              if (!messageAds.has(aiMessageId)) {
+                const responseAd = inputAd || determineAdPlacement(aiMessage, finalMessages);
+                if (responseAd) {
+                  console.log(`🎯 Setting completion ad: ${responseAd.title} for message ${aiMessageId}`);
+                  setMessageAds(prev => new Map(prev.set(aiMessageId, responseAd)));
+                } else {
+                  console.log(`❌ No completion ad found for message ${aiMessageId}`);
+                }
+              } else {
+                console.log(`✅ Message ${aiMessageId} already has ad from streaming, not overriding`);
               }
 
               // Smooth transition: first add the message, then clear streaming
@@ -742,10 +771,15 @@ function ChatInterface({ onBackToHome }) {
 
         const finalMessages = [...updatedMessages, aiMessage];
         
-        // Check for ad placement on the AI response (will use input ad if found, or find new one)
-        const responseAd = inputAd || determineAdPlacement(aiMessage, finalMessages);
-        if (responseAd) {
-          setMessageAds(prev => new Map(prev.set(aiMessageId, responseAd)));
+        // Only determine new ad if message doesn't already have one
+        if (!messageAds.has(aiMessageId)) {
+          const responseAd = inputAd || determineAdPlacement(aiMessage, finalMessages);
+          if (responseAd) {
+            console.log(`🎯 Setting non-streaming ad: ${responseAd.title} for message ${aiMessageId}`);
+            setMessageAds(prev => new Map(prev.set(aiMessageId, responseAd)));
+          }
+        } else {
+          console.log(`✅ Message ${aiMessageId} already has ad, not overriding`);
         }
 
         setMessages(finalMessages);
@@ -813,7 +847,7 @@ function ChatInterface({ onBackToHome }) {
   };
 
   return (
-    <div className="h-screen flex bg-white dark:bg-gray-800">
+    <div className="h-screen flex bg-white dark:bg-gray-950">
       {/* Sticky Ad */}
       {stickyAd && (
         <StickyMiniAd
@@ -824,25 +858,25 @@ function ChatInterface({ onBackToHome }) {
       )}
       
       {/* Sidebar */}
-      <div className="w-64 flex-shrink-0 bg-gray-900 text-white">
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+      <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <span>🌟</span>
-            Gemini
+            <span>AI Chat</span>
           </h1>
           <div className="flex items-center gap-1">
             <button
               onClick={onBackToHome}
-              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
               title="Back to Home"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </button>
+            <ThemeToggle />
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
               title="Settings"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -856,7 +890,7 @@ function ChatInterface({ onBackToHome }) {
         <div className="p-3">
           <button
             onClick={handleNewConversation}
-            className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors duration-200 border border-gray-600"
+            className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-200 dark:border-gray-700"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -880,8 +914,8 @@ function ChatInterface({ onBackToHome }) {
                     key={conv.id}
                     className={`p-3 rounded-lg cursor-pointer transition-all duration-200 group ${
                       currentConversation?.id === conv.id
-                        ? 'bg-gray-700 border border-gray-600'
-                        : 'hover:bg-gray-700'
+                        ? 'bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                     onClick={() => {
                       setCurrentConversation(conv);
@@ -893,10 +927,10 @@ function ChatInterface({ onBackToHome }) {
                       setStickyAd(null); // Clear sticky ad for conversation switch
                     }}
                   >
-                    <h3 className="text-sm font-medium truncate text-white">
+                    <h3 className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">
                       {conv.title}
                     </h3>
-                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
                       <span>{modelInfo.icon}</span>
                       <span>{conv.modelName || modelInfo.name}</span>
                     </p>
@@ -911,16 +945,16 @@ function ChatInterface({ onBackToHome }) {
       {/* Main Content */}
       <div className={`flex-1 flex flex-col ${stickyAd ? 'mt-16' : ''}`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-      <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {currentConversation?.title || 'Gemini'}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {currentConversation?.title || 'AI Assistant'}
             </h2>
             {currentConversation && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <span>{GEMINI_MODELS[currentConversation.model]?.icon || '🌟'}</span>
+              <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                <span>{GEMINI_MODELS[currentConversation.model]?.icon || '🤖'}</span>
                 <span>{currentConversation.modelName || GEMINI_MODELS[currentConversation.model]?.name}</span>
-                {settings.enableStreaming && <span className="text-green-500">• 🔄 Streaming</span>}
+                {settings.enableStreaming && <span className="text-green-600 dark:text-green-400">• Streaming</span>}
               </p>
             )}
           </div>
@@ -931,10 +965,10 @@ function ChatInterface({ onBackToHome }) {
           {messages.length === 0 && !isStreaming && !isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-2xl">
-                  {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🌟'}
+                <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
+                  {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
+                <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-3">
                   How can I help you today?
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-8">
@@ -958,7 +992,7 @@ function ChatInterface({ onBackToHome }) {
                   <div key={message.id} className="group">
                     {message.role === 'user' ? (
                       <div className="flex justify-end">
-                        <div className="max-w-[70%] px-4 py-3 bg-blue-600 text-white rounded-2xl rounded-tr-md">
+                        <div className="max-w-[70%] px-4 py-3 bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 rounded-2xl rounded-tr-md">
                           <div className="whitespace-pre-wrap text-sm leading-relaxed">
                             {message.content}
                           </div>
@@ -966,11 +1000,11 @@ function ChatInterface({ onBackToHome }) {
                       </div>
                     ) : (
                       <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm">
-                          {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🌟'}
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
+                          {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
                         </div>
                         <div className="flex-1 max-w-none">
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-w-[80%]">
+                          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 max-w-[80%]">
                             <FormattedMessage 
                               content={message.content} 
                               isStreaming={false} 
@@ -989,12 +1023,12 @@ function ChatInterface({ onBackToHome }) {
                 {(isLoading || isStreaming) && (
                   <div className="group">
                     <div className="flex gap-4">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm">
-                        {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🌟'}
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
+                        {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
                       </div>
                       <div className="flex-1 max-w-none">
                         {isStreaming && streamingContent ? (
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-w-[80%]">
+                          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 max-w-[80%]">
                             <FormattedMessage 
                               content={streamingContent} 
                               isStreaming={true} 
@@ -1002,12 +1036,8 @@ function ChatInterface({ onBackToHome }) {
                               onAdBecomeSticky={handleAdBecomeSticky}
                               onAdLeaveSticky={handleAdLeaveSticky}
                               onAdInjected={(ad) => {
-                                // Store the ad for the current streaming message - use requestAnimationFrame to avoid interfering with streaming
-                                requestAnimationFrame(() => {
-                                  if (currentMessageId) {
-                                    setMessageAds(prev => new Map(prev.set(currentMessageId, ad)));
-                                  }
-                                });
+                                // Ad already stored during streaming setup, just confirm it's the same one
+                                console.log(`✅ Ad injected during streaming: ${ad.title} for message ${currentMessageId}`);
                               }}
                             />
                           </div>
@@ -1064,13 +1094,13 @@ function ChatInterface({ onBackToHome }) {
                 }
                 disabled={!currentConversation || isLoading || isStreaming || !settings.geminiKey}
                 rows={1}
-                className="w-full pr-12 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none outline-none disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-500 dark:placeholder-gray-400 leading-relaxed"
+                className="w-full pr-12 py-3 px-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:border-transparent resize-none outline-none disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-500 dark:placeholder-gray-400 leading-relaxed"
                 style={{ minHeight: '48px', maxHeight: '200px' }}
               />
               <button
                 type="submit"
                 disabled={!currentConversation || !newMessage.trim() || isLoading || isStreaming || !settings.geminiKey}
-                className="absolute right-2 bottom-2 p-2 rounded-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md"
+                className="absolute right-2 bottom-2 p-2 rounded-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed bg-gray-800 hover:bg-gray-700 dark:bg-gray-200 dark:hover:bg-gray-300 text-white dark:text-gray-800"
               >
                 {isLoading ? (
                   <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

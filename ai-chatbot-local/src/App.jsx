@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
 import AdsPage from './components/AdsPage';
@@ -31,7 +32,7 @@ function App() {
   };
 
   return (
-    <>
+    <ThemeProvider>
       {currentView === 'landing' && (
         <LandingPage 
           onStartChat={handleStartChat}
@@ -44,7 +45,7 @@ function App() {
       {currentView === 'ads' && (
         <AdsPage onBackToHome={handleBackToHome} />
       )}
-    </>
+    </ThemeProvider>
   );
 }
 

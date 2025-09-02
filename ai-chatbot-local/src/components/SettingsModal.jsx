@@ -3,8 +3,10 @@ import { X, Eye, EyeOff, Key, Download, Upload, Check, AlertCircle, ExternalLink
 import { API_PROVIDERS, MODELS, apiService } from '../services/apiService';
 import { dbHelpers } from '../services/database';
 import { downloadFile, readFile, cn } from '../utils/helpers';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function SettingsModal({ isOpen, onClose, onApiKeysChange }) {
+  const { theme, setTheme } = useTheme();
   const [apiKeys, setApiKeys] = useState({
     [API_PROVIDERS.OPENAI]: '',
     [API_PROVIDERS.GEMINI]: ''
@@ -14,7 +16,7 @@ export function SettingsModal({ isOpen, onClose, onApiKeysChange }) {
     [API_PROVIDERS.GEMINI]: false
   });
   const [preferences, setPreferences] = useState({
-    theme: 'dark',
+    theme: theme,
     defaultProvider: API_PROVIDERS.OPENAI,
     defaultModel: 'gpt-4',
     fontSize: 'medium',
@@ -90,6 +92,9 @@ export function SettingsModal({ isOpen, onClose, onApiKeysChange }) {
           apiService.setApiKey(provider, key.trim());
         }
       });
+      
+      // Apply theme change
+      setTheme(preferences.theme);
       
       await dbHelpers.saveSetting('apiKeys', keysToSave);
       await dbHelpers.saveSetting('preferences', preferences);
@@ -344,6 +349,20 @@ export function SettingsModal({ isOpen, onClose, onApiKeysChange }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Theme
+                </label>
+                <select
+                  value={preferences.theme}
+                  onChange={(e) => setPreferences(prev => ({ ...prev, theme: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                >
+                  <option value="light">Light Mode</option>
+                  <option value="dark">Dark Mode</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Default Provider
                 </label>
                 <select
@@ -355,7 +374,9 @@ export function SettingsModal({ isOpen, onClose, onApiKeysChange }) {
                   <option value={API_PROVIDERS.GEMINI}>Google Gemini</option>
                 </select>
               </div>
-              
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Default Model
