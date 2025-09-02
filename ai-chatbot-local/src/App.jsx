@@ -1,6 +1,178 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiService, API_PROVIDERS } from './services/apiService';
 
+// Simple ChatGPT-style formatting component
+function FormattedMessage({ content, isStreaming = false }) {
+  // Split content into lines and process each line
+  const formatText = (text) => {
+    const lines = text.split('\n');
+    const formattedLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Skip empty lines but preserve spacing
+      if (line.trim() === '') {
+        formattedLines.push(
+          <div key={`empty-${i}`} className="h-3"></div>
+        );
+        continue;
+      }
+      
+      // Large headers (lines that end with : and are short)
+      if (line.endsWith(':') && line.length < 50 && !line.includes('http')) {
+        // Add divider before header (except for first header)
+        const isFirstHeader = formattedLines.length === 0 || 
+          !formattedLines.some(element => 
+            element?.props?.children?.props?.className?.includes('font-bold')
+          );
+        
+        if (!isFirstHeader) {
+          formattedLines.push(
+            <div key={`divider-${i}`} className="my-6">
+              <hr className="border border-white dark:border-white" />
+            </div>
+          );
+        }
+        
+        formattedLines.push(
+          <div key={i}>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-4 mb-3">
+              {line.slice(0, -1)}
+            </h2>
+          </div>
+        );
+        continue;
+      }
+      
+      // Medium headers (lines that start with ## or are ALL CAPS and short)
+      if (line.startsWith('## ') || (line === line.toUpperCase() && line.length < 40 && /^[A-Z\s]+$/.test(line))) {
+        const headerText = line.startsWith('## ') ? line.slice(3) : line;
+        
+        // Add divider before header (except for first header)
+        const isFirstHeader = formattedLines.length === 0 || 
+          !formattedLines.some(element => 
+            element?.props?.children?.props?.className?.includes('font-')
+          );
+        
+        if (!isFirstHeader) {
+          formattedLines.push(
+            <div key={`divider-${i}`} className="my-6">
+              <hr className="border border-white dark:border-white" />
+            </div>
+          );
+        }
+        
+        formattedLines.push(
+          <div key={i}>
+            <h3 className="text-md font-semibold text-gray-900 dark:text-white mt-4 mb-2">
+              {headerText}
+            </h3>
+          </div>
+        );
+        continue;
+      }
+      
+      // Small headers (lines that start with # )
+      if (line.startsWith('# ')) {
+        // Add divider before header (except for first header)
+        const isFirstHeader = formattedLines.length === 0 || 
+          !formattedLines.some(element => 
+            element?.props?.children?.props?.className?.includes('font-')
+          );
+        
+        if (!isFirstHeader) {
+          formattedLines.push(
+            <div key={`divider-${i}`} className="my-6">
+              <hr className="border border-white dark:border-white" />
+            </div>
+          );
+        }
+        
+        formattedLines.push(
+          <div key={i}>
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mt-4 mb-2">
+              {line.slice(2)}
+            </h4>
+          </div>
+        );
+        continue;
+      }
+      
+      // List items (lines that start with - or *)
+      if (line.match(/^\s*[-*]\s/)) {
+        formattedLines.push(
+          <div key={i} className="flex items-start gap-2 my-1">
+            <span className="text-gray-600 dark:text-gray-400 mt-1">•</span>
+            <span className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 flex-1">
+              {line.replace(/^\s*[-*]\s/, '')}
+            </span>
+          </div>
+        );
+        continue;
+      }
+      
+      // Numbered list items
+      if (line.match(/^\s*\d+\.\s/)) {
+        const match = line.match(/^\s*(\d+)\.\s(.*)$/);
+        if (match) {
+          formattedLines.push(
+            <div key={i} className="flex items-start gap-2 my-1">
+              <span className="text-blue-600 dark:text-blue-400 font-medium text-sm mt-0.5 min-w-[20px]">
+                {match[1]}.
+              </span>
+              <span className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 flex-1">
+                {match[2]}
+              </span>
+            </div>
+          );
+          continue;
+        }
+      }
+      
+      // Code blocks (lines with code-like patterns)
+      if (line.includes('```') || line.match(/^\s*[{}()[\];]/)) {
+        formattedLines.push(
+          <div key={i} className="my-2">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono text-gray-900 dark:text-gray-100 block">
+              {line}
+            </code>
+          </div>
+        );
+        continue;
+      }
+      
+      // Section dividers (lines with --- or ===)
+      if (line.match(/^[-=]{3,}$/)) {
+        formattedLines.push(
+          <div key={i} className="my-4">
+            <hr className="border border-white dark:border-white" />
+          </div>
+        );
+        continue;
+      }
+      
+      // Regular paragraphs
+      formattedLines.push(
+        <p key={i} className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 mb-3 last:mb-0">
+          {line}
+        </p>
+      );
+    }
+    
+    return formattedLines;
+  };
+
+  return (
+    <div className="text-formatting">
+      {formatText(content)}
+      {isStreaming && (
+        <span className="inline-block w-2 h-5 bg-gray-900 dark:bg-gray-100 ml-1 animate-pulse align-top"></span>
+      )}
+    </div>
+  );
+}
+
 // Available Gemini models
 const GEMINI_MODELS = {
   'gemini-1.5-pro': {
@@ -94,32 +266,48 @@ function App() {
     setCurrentMessageId(null);
   };
 
-  // Enhanced smooth streaming with better word timing
-  const simulateSmootherStreaming = (fullText, callback) => {
-    let currentIndex = 0;
-    const words = fullText.split(/(\s+)/); // Split by whitespace but keep whitespace
-    let currentText = '';
+  // Enhanced smooth streaming with better character timing
+  const simulateSmootherStreaming = (fullText, callback, onComplete) => {
+    if (!fullText || fullText.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
 
-    const streamNextWord = () => {
-      if (currentIndex < words.length) {
-        currentText += words[currentIndex];
+    let currentIndex = 0;
+    let currentText = '';
+    
+    const streamNextChunk = () => {
+      if (currentIndex < fullText.length) {
+        // Add 1-3 characters at a time for more realistic typing
+        const chunkSize = Math.min(
+          Math.random() > 0.8 ? 3 : Math.random() > 0.5 ? 2 : 1,
+          fullText.length - currentIndex
+        );
+        
+        const nextChunk = fullText.substring(currentIndex, currentIndex + chunkSize);
+        currentText += nextChunk;
+        currentIndex += chunkSize;
+        
         callback(currentText);
-        currentIndex++;
         
-        // Variable delay based on content type
-        const word = words[currentIndex - 1];
-        let delay = 50; // Default
+        // Variable delay based on content type - more realistic timing
+        let delay = 30; // Base delay
         
-        if (word && word.includes('\n')) delay = 100; // Pause at line breaks
-        else if (word && word.match(/[.!?]/)) delay = 150; // Pause at sentence endings
-        else if (word && word.match(/[,;:]/)) delay = 80; // Small pause at commas
-        else delay = Math.random() * 40 + 30; // 30-70ms for normal words
+        if (nextChunk.includes('\n\n')) delay = 200; // Long pause for paragraph breaks
+        else if (nextChunk.includes('\n')) delay = 120; // Pause at line breaks
+        else if (nextChunk.match(/[.!?]/)) delay = 180; // Pause at sentence endings
+        else if (nextChunk.match(/[,;:]/)) delay = 100; // Small pause at commas
+        else if (nextChunk.includes(' ')) delay = 60; // Slight pause at spaces
+        else delay = Math.random() * 30 + 25; // 25-55ms for normal characters
         
-        setTimeout(streamNextWord, delay);
+        setTimeout(streamNextChunk, delay);
+      } else {
+        // Streaming complete
+        if (onComplete) onComplete();
       }
     };
 
-    streamNextWord();
+    streamNextChunk();
   };
 
   const handleSendMessage = async (e) => {
@@ -157,11 +345,17 @@ function App() {
 
       console.log(`Sending message to Gemini ${currentConversation.model}...`);
       
-      // Prepare messages for API
-      const apiMessages = updatedMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Prepare messages for API with formatting instructions
+      const apiMessages = [
+        {
+          role: 'system',
+          content: 'Please format your responses with clear structure. Use:\n- Headers ending with ":" for main topics (e.g., "Introduction:", "Key Features:")\n- "- " for bullet points\n- "1. " for numbered lists\n- Clear paragraph breaks between sections\n- Multiple sections when explaining complex topics\n\nThis helps create better visual formatting with automatic section dividers.'
+        },
+        ...updatedMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      ];
 
       if (settings.enableStreaming) {
         // Start streaming
@@ -181,27 +375,33 @@ function App() {
           }
         );
 
-        // Simulate smooth streaming
-        simulateSmootherStreaming(response.content, (partialText) => {
-          streamingContentRef.current = partialText;
-          setStreamingContent(partialText);
-        });
+        // Simulate smooth streaming with proper completion handling
+        simulateSmootherStreaming(
+          response.content, 
+          (partialText) => {
+            streamingContentRef.current = partialText;
+            setStreamingContent(partialText);
+          },
+          () => {
+            // Called when streaming is complete
+            setTimeout(() => {
+              const aiMessage = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: response.content,
+                timestamp: Date.now()
+              };
 
-        // Wait for streaming animation to complete
-        const estimatedTime = Math.max(response.content.split(/\s+/).length * 60 + 500, 2000);
-        setTimeout(() => {
-          const aiMessage = {
-            id: Date.now() + 1,
-            role: 'assistant',
-            content: response.content,
-            timestamp: Date.now()
-          };
-
-          setMessages([...updatedMessages, aiMessage]);
-          setStreamingContent(''); // Clear streaming content after saving
-          setCurrentMessageId(null);
-          setIsStreaming(false);
-        }, estimatedTime);
+              // Smooth transition: first add the message, then clear streaming
+              setMessages([...updatedMessages, aiMessage]);
+              setTimeout(() => {
+                setStreamingContent(''); // Clear streaming content after adding message
+                setCurrentMessageId(null);
+                setIsStreaming(false);
+              }, 100); // Very short delay for smooth transition
+            }, 300); // Small delay to show completion
+          }
+        );
 
       } else {
         // Non-streaming mode
@@ -361,7 +561,7 @@ function App() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-          <div>
+      <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {currentConversation?.title || 'Gemini'}
             </h2>
@@ -420,9 +620,7 @@ function App() {
                         </div>
                         <div className="flex-1 max-w-none">
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-w-[80%]">
-                            <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-gray-100">
-                              {message.content}
-                            </div>
+                            <FormattedMessage content={message.content} isStreaming={false} />
                           </div>
                         </div>
                       </div>
@@ -440,10 +638,7 @@ function App() {
                       <div className="flex-1 max-w-none">
                         {isStreaming && streamingContent ? (
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-w-[80%]">
-                            <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-gray-100">
-                              {streamingContent}
-                              <span className="inline-block w-2 h-5 bg-gray-900 dark:bg-gray-100 ml-1 animate-pulse"></span>
-                            </div>
+                            <FormattedMessage content={streamingContent} isStreaming={true} />
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
@@ -569,7 +764,7 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+        </button>
         </div>
 
         <div className="p-6 space-y-6">
