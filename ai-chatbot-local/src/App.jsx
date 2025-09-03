@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
 import AdsPage from './components/AdsPage';
 
 function App() {
+  // Set document title
+  useEffect(() => {
+    document.title = 'AI Chatbot';
+  }, []);
+
   // Option 1: Always start at landing (current behavior)
   const [currentView, setCurrentView] = useState('landing');
   
