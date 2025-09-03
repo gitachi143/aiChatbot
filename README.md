@@ -1,10 +1,10 @@
 # AI Chatbot with Advertising Platform
 
-A React-based AI chatbot application that integrates with multiple AI providers and displays contextual advertisements.
+A React-based AI chatbot application that integrates with Google Gemini AI and displays contextual advertisements.
 
 ## Features
 
-- Multi-provider AI integration (OpenAI GPT and Google Gemini)
+- AI integration with Google Gemini
 - Real-time chat interface with conversation history
 - Dynamic advertising system based on conversation content
 - Local data persistence using IndexedDB
@@ -17,7 +17,6 @@ A React-based AI chatbot application that integrates with multiple AI providers 
 - Vite
 - Tailwind CSS
 - Dexie.js (IndexedDB wrapper)
-- OpenAI API
 - Google Gemini API
 
 ## Installation
@@ -38,7 +37,7 @@ A React-based AI chatbot application that integrates with multiple AI providers 
 
 ## Usage
 
-1. Add your OpenAI or Google Gemini API key in the settings
+1. Add your Google Gemini API key in the settings
 2. Start chatting with the AI
 3. View contextual advertisements displayed alongside conversations
 
