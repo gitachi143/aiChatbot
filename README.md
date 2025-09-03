@@ -47,6 +47,4 @@ A React-based AI chatbot application that integrates with Google Gemini AI and d
 npm run build
 ```
 
-## License
 
-This project is for educational and portfolio purposes.
