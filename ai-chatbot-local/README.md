@@ -1,12 +1,50 @@
-# React + Vite
+# AI Chatbot with Advertising Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based AI chatbot application that integrates with multiple AI providers and displays contextual advertisements.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Multi-provider AI integration (OpenAI GPT and Google Gemini)
+- Real-time chat interface with conversation history
+- Dynamic advertising system based on conversation content
+- Local data persistence using IndexedDB
+- Dark/light theme toggle
+- Responsive design
 
-## Expanding the ESLint configuration
+## Technologies Used
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19
+- Vite
+- Tailwind CSS
+- Dexie.js (IndexedDB wrapper)
+- OpenAI API
+- Google Gemini API
+
+## Installation
+
+1. Clone the repository
+2. Navigate to the project directory
+3. Install dependencies:
+   ```
+   npm install
+   ```
+4. Start the development server:
+   ```
+   npm run dev
+   ```
+
+## Usage
+
+1. Add your OpenAI or Google Gemini API key in the settings
+2. Start chatting with the AI
+3. View contextual advertisements displayed alongside conversations
+
+## Build for Production
+
+```
+npm run build
+```
+
+## License
+
+This project is for educational and portfolio purposes.
