@@ -8,7 +8,7 @@ function LandingPage({ onStartChat, onViewAds }) {
       <div className="p-4 border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-normal text-gray-900 dark:text-white">
-            💬 AI Chat + Ads Demo
+            🚀 AI Chat + Ads Demo
           </h1>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -83,7 +83,7 @@ function LandingPage({ onStartChat, onViewAds }) {
         {/* Footer */}
         <div className="mt-16 p-4 text-center border-t border-gray-300 dark:border-gray-600">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Uses Gemini AI
+            Powered by Advanced AI Technology
           </p>
         </div>
       </div>

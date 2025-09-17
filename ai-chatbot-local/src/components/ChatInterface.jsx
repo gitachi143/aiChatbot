@@ -903,7 +903,7 @@ function ChatInterface({ onBackToHome }) {
           {conversations.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <div className="text-2xl mb-3">💬</div>
-              <p className="text-sm">No conversations yet</p>
+              <p className="text-sm">Ready to start chatting</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -966,7 +966,7 @@ function ChatInterface({ onBackToHome }) {
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
                 <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
-                  {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
+                  {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🎆'}
                 </div>
                 <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-3">
                   How can I help you today?
@@ -1119,7 +1119,7 @@ function ChatInterface({ onBackToHome }) {
               </button>
             </form>
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-              {settings.enableStreaming ? '✨ Streaming enabled' : 'Press Enter to send, Shift+Enter for new line'}
+              {settings.enableStreaming ? '📶 Real-time responses active' : 'Press Enter to send, Shift+Enter for new line'}
             </div>
           </div>
         </div>
@@ -1310,7 +1310,7 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
                 className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                 title="Debug API key issues (check console)"
               >
-                🐛 Debug
+                Debug
               </button>
               <button
                 onClick={() => {
@@ -1323,7 +1323,7 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
                 className="inline-flex items-center gap-1 text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200 px-2 py-1 rounded border border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                 title="Clear all API keys and reset"
               >
-                🗑️ Reset
+                Reset
               </button>
             </div>
           </div>

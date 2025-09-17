@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "ai-chatbot-local/dist",
+  "installCommand": "cd ai-chatbot-local && npm install",
+  "framework": "vite"
+}
