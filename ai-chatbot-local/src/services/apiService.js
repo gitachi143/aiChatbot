@@ -14,8 +14,7 @@ export const MODELS = {
   },
   [API_PROVIDERS.GEMINI]: {
     'gemini-1.5-pro': 'Gemini 1.5 Pro',
-    'gemini-1.5-flash': 'Gemini 1.5 Flash',
-    'gemini-pro': 'Gemini Pro'
+    'gemini-1.5-flash': 'Gemini 1.5 Flash'
   }
 };
 
@@ -313,7 +312,7 @@ export class APIService {
   async validateApiKey(provider, apiKey) {
     try {
       const testMessages = [{ role: 'user', content: 'Hello' }];
-      const testModel = provider === API_PROVIDERS.OPENAI ? 'gpt-3.5-turbo' : 'gemini-pro';
+      const testModel = provider === API_PROVIDERS.OPENAI ? 'gpt-3.5-turbo' : 'gemini-1.5-flash';
       
       this.setApiKey(provider, apiKey);
       await this.sendMessage(testMessages, provider, testModel, { maxTokens: 10 });

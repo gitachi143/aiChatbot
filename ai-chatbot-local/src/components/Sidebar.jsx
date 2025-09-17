@@ -216,7 +216,7 @@ export function Sidebar({
               <div>
                 <MessageSquare className="w-8 h-8 mx-auto text-gray-400 mb-3" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No conversations found matching "{searchQuery}"
+                  No chats found matching "{searchQuery}"
                 </p>
               </div>
             ) : (

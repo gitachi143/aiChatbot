@@ -265,17 +265,12 @@ const GEMINI_MODELS = {
   'gemini-1.5-pro': {
     name: 'Gemini 1.5 Pro',
     description: 'Most capable model, slower but more intelligent',
-    icon: '🧠'
+    icon: ''
   },
   'gemini-1.5-flash': {
     name: 'Gemini 1.5 Flash', 
     description: 'Fastest model, quick responses',
-    icon: '⚡'
-  },
-  'gemini-pro': {
-    name: 'Gemini Pro',
-    description: 'Balanced model, good for most tasks',
-    icon: '🌟'
+    icon: ''
   }
 };
 
@@ -931,7 +926,6 @@ function ChatInterface({ onBackToHome }) {
                       {conv.title}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                      <span>{modelInfo.icon}</span>
                       <span>{conv.modelName || modelInfo.name}</span>
                     </p>
                   </div>
@@ -952,7 +946,7 @@ function ChatInterface({ onBackToHome }) {
             </h2>
             {currentConversation && (
               <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                <span>{GEMINI_MODELS[currentConversation.model]?.icon || '🤖'}</span>
+                <span>🎆</span>
                 <span>{currentConversation.modelName || GEMINI_MODELS[currentConversation.model]?.name}</span>
                 {settings.enableStreaming && <span className="text-green-600 dark:text-green-400">• Streaming</span>}
               </p>
@@ -966,7 +960,7 @@ function ChatInterface({ onBackToHome }) {
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
                 <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
-                  {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🎆'}
+                  🎆
                 </div>
                 <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-3">
                   How can I help you today?
@@ -1001,7 +995,7 @@ function ChatInterface({ onBackToHome }) {
                     ) : (
                       <div className="flex gap-4">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
-                          {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
+                          🎆
                         </div>
                         <div className="flex-1 max-w-none">
                           <div className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 max-w-[80%]">
@@ -1024,7 +1018,7 @@ function ChatInterface({ onBackToHome }) {
                   <div className="group">
                     <div className="flex gap-4">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
-                        {currentConversation ? GEMINI_MODELS[currentConversation.model]?.icon : '🤖'}
+                        🎆
                       </div>
                       <div className="flex-1 max-w-none">
                         {isStreaming && streamingContent ? (
@@ -1205,7 +1199,7 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
 
       // Test with actual content generation
       console.log('Step 2: Testing content generation...');
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${testKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${testKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1233,7 +1227,7 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
           status: response.status,
           statusText: response.statusText,
           errorData,
-          endpoint: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${testKey.substring(0, 8)}...`
+          endpoint: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${testKey.substring(0, 8)}...`
         });
         
         // Check for specific error types
@@ -1369,7 +1363,6 @@ function GeminiSettingsModal({ onClose, onSave, currentSettings }) {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{modelInfo.icon}</span>
                     <div className="flex-1">
                       <div className={`font-medium text-sm ${
                         defaultModel === modelId
