@@ -127,7 +127,7 @@ function AdsPage({ onBackToHome }) {
       <div className="p-4 border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-normal text-gray-900 dark:text-white">
-            📺 Ad Network - Sample Ads
+            Ad Network - Sample Ads
           </h1>
           <div className="flex items-center gap-2">
             <ThemeToggle />

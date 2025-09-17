@@ -897,8 +897,6 @@ function ChatInterface({ onBackToHome }) {
         <div className="flex-1 overflow-y-auto p-3">
           {conversations.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              <div className="text-2xl mb-3">💬</div>
-              <p className="text-sm">Ready to start chatting</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -946,7 +944,7 @@ function ChatInterface({ onBackToHome }) {
             </h2>
             {currentConversation && (
               <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                <span>🎆</span>
+                <span></span>
                 <span>{currentConversation.modelName || GEMINI_MODELS[currentConversation.model]?.name}</span>
                 {settings.enableStreaming && <span className="text-green-600 dark:text-green-400">• Streaming</span>}
               </p>
@@ -960,7 +958,6 @@ function ChatInterface({ onBackToHome }) {
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
                 <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
-                  🎆
                 </div>
                 <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-3">
                   How can I help you today?
@@ -995,7 +992,6 @@ function ChatInterface({ onBackToHome }) {
                     ) : (
                       <div className="flex gap-4">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
-                          🎆
                         </div>
                         <div className="flex-1 max-w-none">
                           <div className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 max-w-[80%]">
@@ -1018,7 +1014,6 @@ function ChatInterface({ onBackToHome }) {
                   <div className="group">
                     <div className="flex gap-4">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
-                        🎆
                       </div>
                       <div className="flex-1 max-w-none">
                         {isStreaming && streamingContent ? (
@@ -1113,7 +1108,7 @@ function ChatInterface({ onBackToHome }) {
               </button>
             </form>
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-              {settings.enableStreaming ? '📶 Real-time responses active' : 'Press Enter to send, Shift+Enter for new line'}
+              {settings.enableStreaming ? '' : 'Press Enter to send, Shift+Enter for new line'}
             </div>
           </div>
         </div>
