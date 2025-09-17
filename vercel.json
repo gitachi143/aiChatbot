@@ -1,6 +1,14 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "ai-chatbot-local/dist",
-  "installCommand": "cd ai-chatbot-local && npm install",
-  "framework": "vite"
+  "buildCommand": "cd ai-chatbot-local && npm run build",
+  "outputDirectory": "ai-chatbot-local/dist", 
+  "installCommand": "cd ai-chatbot-local && npm install --legacy-peer-deps",
+  "framework": "vite",
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "NODE_VERSION": "18.x"
+  }
 }
