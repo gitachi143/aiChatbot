@@ -957,8 +957,6 @@ function ChatInterface({ onBackToHome }) {
           {messages.length === 0 && !isStreaming && !isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-2xl px-6">
-                <div className="w-12 h-12 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl">
-                </div>
                 <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-3">
                   How can I help you today?
                 </h3>

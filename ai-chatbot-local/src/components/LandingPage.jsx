@@ -69,19 +69,16 @@ function LandingPage({ onStartChat, onViewAds }) {
         {/* How it works */}
         <div className="mb-12">
           <h3 className="text-lg text-gray-900 dark:text-white mb-4">How to use:</h3>
-          <div className="bg-white dark:bg-gray-800 p-6 border border-gray-300 dark:border-gray-600">
-            <ol className="space-y-3 text-gray-700 dark:text-gray-300">
-              <li>1. Click "Start Chat" above</li>
-              <li>2. Add your Gemini API key in settings (gear icon)</li>
-              <li>3. Start a new chat and talk about anything</li>
-              <li>4. Watch as relevant ads appear (Try asking: Dell laptops vs hp)</li>
-            </ol>
-
-          </div>
+          <ol className="space-y-2 text-gray-700 dark:text-gray-300">
+            <li>1. Click "Start Chat" above</li>
+            <li>2. Add your Gemini API key in settings (gear icon)</li>
+            <li>3. Start a new chat and talk about anything</li>
+            <li>4. Watch as relevant ads appear (Try asking: Dell laptops vs hp)</li>
+          </ol>
         </div>
         
         {/* Footer */}
-        <div className="mt-16 p-4 text-center border-t border-gray-300 dark:border-gray-600">
+        <div className="mt-16 p-4 text-center">
         </div>
       </div>
     </div>
