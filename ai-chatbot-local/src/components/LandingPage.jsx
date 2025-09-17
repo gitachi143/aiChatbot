@@ -12,12 +12,6 @@ function LandingPage({ onStartChat, onViewAds }) {
           </h1>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button
-              onClick={onStartChat}
-              className="bg-gray-800 hover:bg-black text-white px-4 py-2 border border-gray-600 text-sm"
-            >
-              → Start Chat
-            </button>
           </div>
         </div>
       </div>
