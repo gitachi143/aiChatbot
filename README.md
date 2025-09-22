@@ -1,6 +1,4 @@
-# AI Chatbot with Advertising Platform
-
-A React-based AI chatbot application that integrates with Google Gemini AI and displays contextual advertisements.
+# AI Chatbot with Ads
 
 ## Features
 
@@ -19,32 +17,10 @@ A React-based AI chatbot application that integrates with Google Gemini AI and d
 - Dexie.js (IndexedDB wrapper)
 - Google Gemini API
 
-## Installation
 
-1. Clone the repository
-2. Navigate to the project directory:
-   ```
-   cd ai-chatbot-local
-   ```
-3. Install dependencies:
-   ```
-   npm install
-   ```
-4. Start the development server:
-   ```
-   npm run dev
-   ```
-
-## Usage
+## Using
 
 1. Add your Google Gemini API key in the settings
 2. Start chatting with the AI
 3. View contextual advertisements displayed alongside conversations
-
-## Build for Production
-
-```
-npm run build
-```
-
 
